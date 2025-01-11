@@ -50,7 +50,7 @@ Route::post('/register', [RegistrationController::class, 'UserRegister']);
 Route::post('/login', [AuthController::class, 'UserLogin']);
 Route::get('/login/{token}', [AuthController::class, 'UserLoginVerify']);
 Route::post('/verify-mail', [AuthController::class, 'VerifyUserMail']);
-Route::post('/reset-password', [AuthController::class, 'UserResetPassword']);
+Route::post('/reset-password/{token}', [AuthController::class, 'UserResetPassword']);
 Route::middleware('auth.token')->post('/logout', [AuthController::class, 'UserLogout']);
 
 //Payment
@@ -64,7 +64,7 @@ Route::middleware('auth.token')->get('/membership-history/{id}', [MembershipCont
 //Reminder Management
 Route::middleware('auth.token')->get('/reminder-view/{id}', [ReminderController::class, 'index']);
 Route::middleware('auth.token', 'check.permission:Calendar Reminder Create')->post('/reminder-add/{id}', [ReminderController::class, 'store']);
-Route::middleware('auth.token', 'check.permission:Calendar View')->get('/reminder-details/{id}', [ReminderController::class, 'show']);
+Route::middleware('auth.token', 'check.permission:Calendar Reminder Create')->get('/reminder-details/{id}', [ReminderController::class, 'show']);
 Route::middleware('auth.token', 'check.permission:Calendar Reminder Edit')->put('/reminder-update/{id}', [ReminderController::class, 'update']);
 Route::middleware('auth.token', 'check.permission:Calendar Reminder Delete')->delete('/reminder-delete/{id}', [ReminderController::class, 'destroy']);
 
@@ -117,7 +117,6 @@ Route::middleware('auth.admintoken')->post('/users-details-edit/{userid}', [User
 Route::middleware('auth.admintoken')->delete('/users-details-delete/{userid}', [UserManageController::class, 'UserDetailsDelete']);
 Route::middleware('auth.admintoken')->post('/users-search', [UserManageController::class, 'UserSearch']);
 Route::middleware('auth.admintoken')->post('/users-filter', [UserManageController::class, 'UserFilter']);
-Route::middleware('auth.admintoken')->get('/users-roleslist', [UserManageController::class, 'UserRolesList']);
 
 //Admin Calendar Management
 Route::middleware('auth.admintoken')->get('/users-list-calendar', [UserManageController::class, 'UserListCalendar']);
@@ -200,6 +199,8 @@ Route::middleware('auth.admintoken')->put('/permissions/edit/{id}', [PermissionC
 Route::middleware('auth.admintoken')->delete('/permissions/delete/{id}', [PermissionController::class, 'DeletePermission']);
 
 //Admin Settings
+Route::middleware('auth.admintoken')->get('/users-roleslist', [UserManageController::class, 'UserRolesList']);
+Route::middleware('auth.admintoken')->post('/users-roleslist/update/{id}', [UserManageController::class, 'UpdateUserRoles']);
 Route::middleware('auth.admintoken')->get('/permissions/list/{id}', [SettingsController::class, 'ListOfPermission']);
 Route::middleware('auth.admintoken')->post('/permissions/update', [SettingsController::class, 'UpdatePermission']);
 
@@ -208,5 +209,5 @@ Route::middleware('auth.admintoken')->post('/users/reports/pdf', [ReportsControl
 Route::get('/users/reports/excel', [ReportsController::class, 'UserExcelReport']);
 Route::get('/users/reports/csv', [ReportsController::class, 'UserCsvReport']);
 Route::middleware('auth.admintoken')->post('/reminders/reports/pdf', [ReportsController::class, 'ReminderPdfReport']);
-Route::middleware('auth.admintoken')->get('/reminders/excel', [ReportsController::class, 'ReminderExcelReport']);
-Route::middleware('auth.admintoken')->get('/reminders/csv', [ReportsController::class, 'ReminderCsvReport']);
+Route::get('/reminders/reports/excel', [ReportsController::class, 'ReminderExcelReport']);
+Route::get('/reminders/reports/csv', [ReportsController::class, 'ReminderCsvReport']);

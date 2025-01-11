@@ -30,6 +30,6 @@ class VerifyUserMail extends Mailable
                         'viewLink' => $this->viewLink,
                     ]);
     }
-
+    
 
 }

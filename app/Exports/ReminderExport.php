@@ -9,10 +9,10 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use App\Models\User;
+use App\Models\Reminder;
 
 
-class UsersExport implements FromCollection, WithHeadings, WithEvents
+class ReminderExport implements FromCollection, WithHeadings, WithEvents
 {
     use \Maatwebsite\Excel\Concerns\Exportable;
 
@@ -25,26 +25,38 @@ class UsersExport implements FromCollection, WithHeadings, WithEvents
         $this->endDate = $endDate;
     }
 
-    // public function collection()
-    // {
-    //     return User::whereBetween('created_at', [ $this->startDate,  $this->endDate])->get(['id','full_name','email','phone_number','postcode','country','status']);
-    // }
-
     public function collection()
     {
-        return User::whereBetween('created_at', [
-            $this->startDate->startOfDay(),
-            $this->endDate->endOfDay()
-        ])->get(['id', 'full_name', 'email', 'phone_number', 'postcode', 'country', 'status']);
+        return Reminder::with('user:id,full_name')
+            ->whereBetween('created_at', [
+                $this->startDate->startOfDay(),
+                $this->endDate->endOfDay(),
+            ])
+            ->get()
+            ->map(function ($reminder) {
+                return [
+                    'id' => $reminder->id,
+                    'user_name' => $reminder->user->full_name,
+                    'title' => $reminder->title,
+                    'category' => $reminder->category,
+                    'subcategory' => $reminder->subcategory,
+                    'due_date' => $reminder->due_date,
+                    'time' => $reminder->time,
+                    'provider' => $reminder->provider,
+                    'cost' => $reminder->cost,
+                    'description' => $reminder->description,
+                    'payment_frequency' => $reminder->payment_frequency,
+                    'status' => $reminder->reminder_status,
+                ];
+            });
     }
-
 
 
     public function headings(): array
     {
         return [
-            ['User Report'],
-            ['User Id', 'Name', 'Mail', 'Mobile number', 'Post Code', 'Country', 'Status'],
+            ['Reminder Report'],
+            ['Reminder Id', 'User Name', 'Title', 'Category', 'Sug Category', 'Due Date', 'Time', 'Provider', 'Cost', 'Description', 'Payment Frequency', 'Status'],
         ];
     }
 
@@ -54,9 +66,9 @@ class UsersExport implements FromCollection, WithHeadings, WithEvents
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet;
 
-                $sheet->mergeCells('A1:G1');
+                $sheet->mergeCells('A1:L1');
 
-                $sheet->getStyle('A1:G1')->applyFromArray([
+                $sheet->getStyle('A1:L1')->applyFromArray([
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_CENTER,
                         'vertical' => Alignment::VERTICAL_CENTER,
@@ -75,7 +87,7 @@ class UsersExport implements FromCollection, WithHeadings, WithEvents
     
                 $sheet->getRowDimension(1)->setRowHeight(30);
 
-                $sheet->getStyle('A2:G2')->applyFromArray([
+                $sheet->getStyle('A2:L2')->applyFromArray([
                     'font' => [
                         'bold' => true,
                     ],
@@ -93,7 +105,7 @@ class UsersExport implements FromCollection, WithHeadings, WithEvents
                     ],
                 ]);
 
-                $sheet->getStyle('A3:G' . ($sheet->getHighestRow()))->applyFromArray([
+                $sheet->getStyle('A3:L' . ($sheet->getHighestRow()))->applyFromArray([
                     'borders' => [
                         'allBorders' => [
                             'borderStyle' => Border::BORDER_THIN,
@@ -105,12 +117,19 @@ class UsersExport implements FromCollection, WithHeadings, WithEvents
                 ]);
 
                 $sheet->getColumnDimension('A')->setWidth(10);
-                $sheet->getColumnDimension('B')->setWidth(35);
-                $sheet->getColumnDimension('C')->setWidth(45);
+                $sheet->getColumnDimension('B')->setWidth(30);
+                $sheet->getColumnDimension('C')->setWidth(40);
                 $sheet->getColumnDimension('D')->setWidth(30);
-                $sheet->getColumnDimension('E')->setWidth(20);
-                $sheet->getColumnDimension('F')->setWidth(30);
+                $sheet->getColumnDimension('E')->setWidth(25);
+                $sheet->getColumnDimension('F')->setWidth(20);
                 $sheet->getColumnDimension('G')->setWidth(20);
+                $sheet->getColumnDimension('H')->setWidth(25);
+                $sheet->getColumnDimension('I')->setWidth(20);
+                $sheet->getColumnDimension('J')->setWidth(40);
+                $sheet->getColumnDimension('K')->setWidth(20);
+                $sheet->getColumnDimension('L')->setWidth(20);
+
+                $sheet->getStyle('J')->getAlignment()->setWrapText(true);
             }
         ];
     }

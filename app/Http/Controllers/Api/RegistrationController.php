@@ -17,7 +17,13 @@ class RegistrationController extends Controller
             'email' => 'required|string|email|max:255',
             'password' => 'required|string|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
             'phone_number' => 'required|string|min:10|max:15',
-            'postcode' => 'required|alpha_num|max:10',
+            'postcode' => [
+                'required',
+                'string',
+                'max:10',
+                'min:5',
+                'regex:/^([A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}|GIR ?0AA)$/i',
+            ],
             'country' => 'required|string|max:20',
             'accept' => 'required|accepted',
         ]);
@@ -29,7 +35,7 @@ class RegistrationController extends Controller
             ], 422);
         }
 
-        $user = User::where('email',$request->email)->first();
+        $user = User::where('email', $request->email)->first();
         //return $user;
 
         if ($user) {

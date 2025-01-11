@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\User;
+use App\Models\UserToken;
 
 class CheckPermission
 {
@@ -22,13 +23,15 @@ class CheckPermission
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $user = User::where('api_token', $token)->first();
+        $user = UserToken::where('token', $token)->first();
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        //dd($user);
+
         $hasPermission = DB::table('users_permissions_map')
-            ->where('user_id', $user->id)
+            ->where('user_id', $user->user_id)
             ->where('permission_id', function ($query) use ($permission) {
                 $query->select('id')
                     ->from('permissions')

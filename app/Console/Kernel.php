@@ -17,21 +17,67 @@ class Kernel extends ConsoleKernel
      * Define the application's command schedule.
      */
 
+    // protected function schedule(Schedule $schedule)
+    // {
+    //     $schedule->call(function () {
+    //         $today = Carbon::now()->startOfDay();
+    //         $currentTime = Carbon::now();
+
+    //         // Log::info('Timezone: ' . date_default_timezone_get());
+    //         // Log::info($currentTime);
+
+    //         $reminders = Reminder::whereNotNull('due_date')
+    //             ->where('due_date', '>=', $today)
+    //             ->where('email_notification_status', 'active')
+    //             ->get();
+
+    //         //Log::info($reminders);
+
+    //         foreach ($reminders as $reminder) {
+    //             $user = $reminder->user;
+    //             if (!$user) {
+    //                 continue;
+    //             }
+
+    //             $dueDate = Carbon::parse($reminder->due_date)->startOfDay();
+    //             $remainingDays = $dueDate->diffInDays($today);
+
+    //             //Log::info($remainingDays);
+
+    //             if ($dueDate->gt($today)) {
+    //                 if ($remainingDays === 10 && is_null($reminder->email10days)) {
+    //                     $this->sendReminder($user, $reminder, '10 days');
+    //                     $reminder->update(['email10days' => now()]);
+    //                 } elseif ($remainingDays === 5 && is_null($reminder->email5days)) {
+    //                     $this->sendReminder($user, $reminder, '5 days');
+    //                     $reminder->update(['email5days' => now()]);
+    //                 } elseif ($remainingDays === 3 && is_null($reminder->email3days)) {
+    //                     $this->sendReminder($user, $reminder, '3 days');
+    //                     $reminder->update(['email3days' => now()]);
+    //                 } elseif ($remainingDays === 1 && is_null($reminder->email1day)) {
+    //                     $this->sendReminder($user, $reminder, '1 day');
+    //                     $reminder->update(['email1day' => now()]);
+    //                 }
+    //             } elseif ($remainingDays === 0 && is_null($reminder->emailcurrentday)) {
+    //                 $this->sendReminder($user, $reminder, 'Today');
+    //                 $reminder->update(['emailcurrentday' => now(), 'email_notification_status' => 'completed']);
+    //             }
+    //         }
+    //     })->everyMinute();
+    // }
+
     protected function schedule(Schedule $schedule)
     {
         $schedule->call(function () {
             $today = Carbon::now()->startOfDay();
             $currentTime = Carbon::now();
 
-            // Log::info('Timezone: ' . date_default_timezone_get());
-            // Log::info($currentTime);
+            //Log::info($currentTime);
 
             $reminders = Reminder::whereNotNull('due_date')
                 ->where('due_date', '>=', $today)
                 ->where('email_notification_status', 'active')
                 ->get();
-
-            //Log::info($reminders);
 
             foreach ($reminders as $reminder) {
                 $user = $reminder->user;
@@ -40,9 +86,12 @@ class Kernel extends ConsoleKernel
                 }
 
                 $dueDate = Carbon::parse($reminder->due_date)->startOfDay();
+                $dueTime = Carbon::parse($reminder->time);
                 $remainingDays = $dueDate->diffInDays($today);
 
-                //Log::info($remainingDays);
+                if ($dueDate->equalTo($today) && $currentTime->lt($dueTime)) {
+                    continue; 
+                }
 
                 if ($dueDate->gt($today)) {
                     if ($remainingDays === 10 && is_null($reminder->email10days)) {
@@ -55,16 +104,21 @@ class Kernel extends ConsoleKernel
                         $this->sendReminder($user, $reminder, '3 days');
                         $reminder->update(['email3days' => now()]);
                     } elseif ($remainingDays === 1 && is_null($reminder->email1day)) {
-                        $this->sendReminder($user, $reminder, '1 day');
-                        $reminder->update(['email1day' => now()]);
+                        if ($currentTime->greaterThanOrEqualTo($dueTime)) {
+                            $this->sendReminder($user, $reminder, '1 day');
+                            $reminder->update(['email1day' => now()]);
+                        }
                     }
                 } elseif ($remainingDays === 0 && is_null($reminder->emailcurrentday)) {
-                    $this->sendReminder($user, $reminder, 'Today');
-                    $reminder->update(['emailcurrentday' => now(), 'email_notification_status' => 'completed']);
+                    if ($currentTime->greaterThanOrEqualTo($dueTime)) {
+                        $this->sendReminder($user, $reminder, 'Today');
+                        $reminder->update(['emailcurrentday' => now(), 'email_notification_status' => 'completed']);
+                    }
                 }
             }
         })->everyMinute();
     }
+
 
 
 

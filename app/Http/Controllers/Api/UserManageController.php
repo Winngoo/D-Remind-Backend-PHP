@@ -40,9 +40,9 @@ class UserManageController extends Controller
     public function UserDetailsEdit(Request $request, $userid)
     {
         $validator = Validator::make($request->all(), [
-            'role_id' => 'nullable|string|max:5',
+            // 'role_id' => 'nullable|string|max:5',
             'full_name' => 'nullable|string|max:255',
-            'role_name' => 'nullable|string|max:255',
+            // 'role_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone_number' => 'nullable|string|max:15',
             'postcode' => 'nullable|string|max:10',
@@ -69,7 +69,7 @@ class UserManageController extends Controller
                 $user->profile_picture = 'userprofile/' . $filename;
             }
 
-            $fields = $request->only(['full_name', 'email', 'phone_number', 'postcode', 'country', 'role_id', 'role_name']);
+            $fields = $request->only(['full_name', 'email', 'phone_number', 'postcode', 'country']);
             foreach ($fields as $key => $value) {
                 if (!is_null($value)) {
                     $user->$key = $value;
@@ -173,17 +173,42 @@ class UserManageController extends Controller
             ], 402);
         }
 
+
         $query = User::query();
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
+            
+        }  
+        if ($request->filled('start_date') && !$request->filled('end_date')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The end date is required',
+            ], 400);
         }
-
-        if ($request->filled('start_date') && $request->filled('end_date')) {
+    
+        if ($request->filled('end_date') && !$request->filled('start_date')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The start date is required',
+            ], 400);
+        }
+    
+        if ($request->filled(['start_date', 'end_date'])) {
             $query->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
         }
 
-        $filteredUsers = $query->select('id', 'full_name', 'email', 'phone_number', 'postcode', 'country', 'status', 'created_at')->get();
+        //$filteredUsers = $query->select('id', 'full_name', 'email', 'phone_number', 'postcode', 'country', 'status', 'created_at')->get();
+
+        $filteredUsers = $query->select('id', 'role_name', 'full_name', 'email', 'phone_number', 'postcode', 'country', 'profile_picture', 'status')
+        ->where('status', 'active')
+        ->get()
+        ->map(function ($user) {
+            if ($user->profile_picture) {
+                $user->profile_picture = url($user->profile_picture);
+            }
+            return $user;
+        });
 
         if ($filteredUsers->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'No users found for the given filters.'], 404);
@@ -227,4 +252,29 @@ class UserManageController extends Controller
 
         return response()->json(['success' => true, 'roles_list' => $roleslist]);
     }
+
+    public function UpdateUserRoles(Request $request , $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'role_id' => 'required|I',
+            'role_name' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $users = User::find($id);
+
+        if (!$users) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $users->update($request->all());
+
+        return response()->json(['message' => 'Role updated successfully', 'data' => $users], 200);
+    }
+
 }
